@@ -426,12 +426,13 @@ function showResult() {
 const LARK_WEBHOOK = 'https://klook.sg.larksuite.com/base/workflow/webhook/event/SXBGacwlowyytxh0dZjlWbu8g6c';
 
 async function submitToLark(employeeId, finalScore) {
-  const resp = await fetch(LARK_WEBHOOK, {
+  // no-cors + text/plain 绕过浏览器 CORS 限制，Lark Webhook 支持此格式
+  await fetch(LARK_WEBHOOK, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ employee_id: employeeId, score: finalScore })
   });
-  if (!resp.ok) throw new Error('Webhook 返回 ' + resp.status);
 }
 
 // ── EMPLOYEE ID SUBMIT → LARK BITABLE ──
