@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -7,14 +6,14 @@
 <title>KLOOK 端午龙舟竞速</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;background:#1a4a2a;display:flex;align-items:center;justify-content:center;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+html,body{width:100%;height:100%;overflow:hidden;background:#1a4a2a;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
 
 /* ── RESPONSIVE SCALE WRAPPER ── */
 #scale-root{
   width:1280px;height:720px;
   transform-origin:top left;
-  position:relative;
-  /* JS sets transform:scale() on this */
+  position:fixed;
+  top:0;left:0;
 }
 #wrapper{position:absolute;inset:0;overflow:hidden;cursor:none}
 canvas{display:block;width:1280px;height:720px}
@@ -423,6 +422,18 @@ function showResult() {
   showScreen('result-screen');
 }
 
+// ── LARK BITABLE WEBHOOK ──
+const LARK_WEBHOOK = 'https://klook.sg.larksuite.com/base/workflow/webhook/event/SXBGacwlowyytxh0dZjlWbu8g6c';
+
+async function submitToLark(employeeId, finalScore) {
+  const resp = await fetch(LARK_WEBHOOK, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ employee_id: employeeId, score: finalScore })
+  });
+  if (!resp.ok) throw new Error('Webhook 返回 ' + resp.status);
+}
+
 // ── EMPLOYEE ID SUBMIT → LARK BITABLE ──
 document.getElementById('btn-submit').addEventListener('click', async () => {
   const input = document.getElementById('eid-input');
@@ -430,38 +441,22 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
   const btn   = document.getElementById('btn-submit');
   const val   = input.value.trim().toUpperCase();
 
-  // Validate: K + 6 digits
   if(!/^K\d{6}$/.test(val)) {
     input.classList.add('error');
     hint.textContent = '格式错误，请输入 K + 6位数字，例如 K123456';
     return;
   }
   input.classList.remove('error');
-  hint.textContent='';
-  btn.disabled=true; btn.textContent='提交中…';
+  hint.textContent = '';
+  btn.disabled = true; btn.textContent = '提交中…';
 
   try {
-    const finalScore = Math.max(0, score);
-    // Call Anthropic API → Lark MCP to write record
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:500,
-        system:'You are a data recorder. When given employee ID and score, use the lark bitable tool to create a record. app_token=IPPFb756Oa1gSAspt1ilb0BHghf table_id=tblNoDYsIaFvmwfj. Fields: 工号 (text) and 得分 (number). Always use useUAT=true. Reply only with "ok" after successfully creating the record.',
-        messages:[{role:'user',content:`Record this game result: employee_id=${val}, score=${finalScore}. Create a record in the bitable now.`}],
-        mcp_servers:[{type:'url',url:'https://claude-connector-953009318851.asia-southeast1.run.app/v1/mcpsrv/mcp',name:'lark-mcp-beta'}]
-      })
-    });
-    const data = await resp.json();
-    const text = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-    if(data.error) throw new Error(data.error.message);
-    btn.textContent='✅ 已提交';
+    await submitToLark(val, Math.max(0, score));
+    btn.textContent = '✅ 已提交';
     document.getElementById('submit-success').classList.add('show');
   } catch(e) {
-    btn.disabled=false; btn.textContent='提交';
-    hint.textContent='提交失败，请重试';
+    btn.disabled = false; btn.textContent = '提交';
+    hint.textContent = '提交失败，请重试';
     console.error(e);
   }
 });
