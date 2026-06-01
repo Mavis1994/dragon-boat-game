@@ -55,7 +55,7 @@ canvas{display:block;width:1280px;height:720px}
 .btn-pri:hover{transform:translateY(-1px)}
 .btn-pri:active{transform:scale(.97)}
 
-#rotate-tip{display:none;position:fixed;inset:0;background:rgba(10,40,20,.82);backdrop-filter:blur(6px);z-index:99999;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;gap:12px}
+#rotate-tip{display:none;position:fixed;inset:0;background:rgba(10,40,20,.88);backdrop-filter:blur(6px);z-index:99999;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;gap:16px}#rotate-tip .rt-btn{background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.5);border-radius:50%;width:80px;height:80px;font-size:42px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}#rotate-tip .rt-btn:active{background:rgba(255,255,255,.3)}
 
 #rotate-tip .rt-title{font-size:22px;font-weight:900;letter-spacing:2px}
 #rotate-tip .rt-sub{font-size:14px;color:rgba(255,255,255,.7)}
@@ -147,9 +147,9 @@ canvas{display:block;width:1280px;height:720px}
 </div>
 
 <div id="rotate-tip">
-  <div style="font-size:48px;line-height:1">↻</div>
+  <button class="rt-btn" onclick="lockLandscape()">↻</button>
   <div style="font-size:20px;font-weight:900;letter-spacing:2px">请横屏使用</div>
-  <div style="font-size:13px;opacity:.7">旋转设备以获得最佳游戏体验</div>
+  <div style="font-size:13px;opacity:.7">点击箭头或旋转设备</div>
 </div>
 <script>
 const ASSETS = {
@@ -538,6 +538,19 @@ wrapper.addEventListener('touchcancel', function(){
   touchTargetX = null;
 }, {passive:false});
 
+
+// ── LOCK LANDSCAPE ──
+function lockLandscape(){
+  if(screen.orientation && screen.orientation.lock){
+    screen.orientation.lock('landscape').catch(function(){});
+  } else if(screen.lockOrientation){
+    screen.lockOrientation('landscape');
+  } else if(screen.mozLockOrientation){
+    screen.mozLockOrientation('landscape');
+  } else if(screen.msLockOrientation){
+    screen.msLockOrientation('landscape');
+  }
+}
 // ── RESPONSIVE SCALING ──
 function fitGame(){
   const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
