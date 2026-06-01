@@ -134,7 +134,7 @@ canvas{display:block;width:1280px;height:720px}
         <div class="eid-label">📋 提交工号记录成绩</div>
         <div class="eid-row">
           <input class="eid-input" id="eid-input" type="text" placeholder="K000001" maxlength="7">
-          <button class="eid-btn" id="eid-submit">提交</button>
+          <button class="eid-btn" id="eid-submit" onclick="submitEID()">提交</button>
         </div>
         <div class="eid-msg" id="eid-msg"></div>
       </div>
@@ -582,58 +582,45 @@ document.getElementById('eid-submit').addEventListener('click', async function()
 });
 
 
+
+
+
 // ── EMPLOYEE ID SUBMIT ──
-(function(){
-  var WEBHOOK = 'https://klook.sg.larksuite.com/base/workflow/webhook/event/SXBGacwlowyytxh0dZjlWbu8g6c';
-  var submitBtn = document.getElementById('eid-submit');
-  var inputEl   = document.getElementById('eid-input');
-  var msgEl     = document.getElementById('eid-msg');
+function submitEID(){
+  var val = document.getElementById('eid-input').value.trim().toUpperCase();
+  var msg = document.getElementById('eid-msg');
+  var btn = document.getElementById('eid-submit');
+  var inp = document.getElementById('eid-input');
 
-  submitBtn.addEventListener('click', function(){
-    var val = inputEl.value.trim().toUpperCase();
-    // Validate K + 6 digits
-    if(!/^K[0-9]{6}$/.test(val)){
-      inputEl.style.borderColor = '#e03030';
-      msgEl.style.color = '#e03030';
-      msgEl.textContent = '格式错误，请输入 K + 6位数字（如 K123456）';
-      return;
-    }
-    inputEl.style.borderColor = '';
-    msgEl.textContent = '';
-    submitBtn.disabled = true;
-    submitBtn.textContent = '提交中…';
+  if(!/^K[0-9]{6}$/.test(val)){
+    inp.style.borderColor='#e03030';
+    msg.style.color='#e03030';
+    msg.textContent='格式错误，请输入 K + 6位数字（如 K123456）';
+    return;
+  }
 
-    var payload = JSON.stringify({ employee_id: val, score: Math.max(0, score) });
-    fetch(WEBHOOK, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: payload
-    }).then(function(){
-      msgEl.style.color = '#0a8040';
-      msgEl.textContent = '✅ 提交成功！';
-      submitBtn.textContent = '已提交';
-      inputEl.disabled = true;
-    }).catch(function(){
-      submitBtn.disabled = false;
-      submitBtn.textContent = '提交';
-      msgEl.style.color = '#e03030';
-      msgEl.textContent = '提交失败，请检查网络后重试';
-    });
+  inp.style.borderColor='';
+  msg.textContent='';
+  btn.disabled=true;
+  btn.textContent='提交中…';
+
+  fetch('https://klook.sg.larksuite.com/base/workflow/webhook/event/SXBGacwlowyytxh0dZjlWbu8g6c', {
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({employee_id:val, score:Math.max(0,score)})
+  }).then(function(){
+    msg.style.color='#0a8040';
+    msg.textContent='✅ 提交成功！';
+    btn.textContent='已提交';
+    inp.disabled=true;
+  }).catch(function(e){
+    btn.disabled=false;
+    btn.textContent='提交';
+    msg.style.color='#e03030';
+    msg.textContent='提交失败，请重试';
   });
-
-  // Reset form each time result screen shows
-  var _origShowResult = showResult;
-  showResult = function(){
-    inputEl.value = '';
-    inputEl.disabled = false;
-    inputEl.style.borderColor = '';
-    submitBtn.disabled = false;
-    submitBtn.textContent = '提交';
-    msgEl.textContent = '';
-    _origShowResult();
-  };
-})();
+}
 
 </script>
 <div id="rotate-tip">
