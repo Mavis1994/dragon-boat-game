@@ -55,11 +55,11 @@ canvas{display:block;width:1280px;height:720px}
 .btn-pri:hover{transform:translateY(-1px)}
 .btn-pri:active{transform:scale(.97)}
 
-#rotate-tip{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:99999;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;gap:16px}
-#rotate-tip .rt-icon{font-size:72px;animation:rotatePhone 1.5s ease-in-out infinite}
+#rotate-tip{display:none;position:fixed;inset:0;background:rgba(10,40,20,.82);backdrop-filter:blur(6px);z-index:99999;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;gap:12px}
+
 #rotate-tip .rt-title{font-size:22px;font-weight:900;letter-spacing:2px}
 #rotate-tip .rt-sub{font-size:14px;color:rgba(255,255,255,.7)}
-@keyframes rotatePhone{0%,100%{transform:rotate(0deg)}50%{transform:rotate(90deg)}}
+50%{transform:rotate(90deg)}}
 
 .eid-section{margin-bottom:14px;background:#f0faf6;border-radius:12px;padding:12px 16px}
 .eid-label{font-size:12px;color:#3a8070;font-weight:700;margin-bottom:7px;text-align:left}
@@ -147,9 +147,9 @@ canvas{display:block;width:1280px;height:720px}
 </div>
 
 <div id="rotate-tip">
-  <div class="rt-icon">📱</div>
-  <div class="rt-title">请横屏使用</div>
-  <div class="rt-sub">旋转设备以获得最佳游戏体验</div>
+  <div style="font-size:48px;line-height:1">↻</div>
+  <div style="font-size:20px;font-weight:900;letter-spacing:2px">请横屏使用</div>
+  <div style="font-size:13px;opacity:.7">旋转设备以获得最佳游戏体验</div>
 </div>
 <script>
 const ASSETS = {
@@ -524,17 +524,17 @@ function onTouchUpdate(e){
   const rect = wrapper.getBoundingClientRect();
   const scale = rect.width / W;
   const tx = (e.touches[0].clientX - rect.left) / scale;
-  touchTargetX = tx < W / 2 ? CFG.boat.minX : CFG.boat.maxX;
+  // Map finger position directly to boat target (clamped to boat range)
+  touchTargetX = Math.max(CFG.boat.minX, Math.min(CFG.boat.maxX, tx));
 }
 wrapper.addEventListener('touchstart',  onTouchUpdate, {passive:false});
 wrapper.addEventListener('touchmove',   onTouchUpdate, {passive:false});
 wrapper.addEventListener('touchend', function(){
-  // Keep mouseX at current boat position so boat doesn't drift back to center
-  if(touchTargetX !== null) mouseX = boatX;
+  if(touchTargetX !== null) mouseX = touchTargetX;
   touchTargetX = null;
 }, {passive:false});
 wrapper.addEventListener('touchcancel', function(){
-  if(touchTargetX !== null) mouseX = boatX;
+  if(touchTargetX !== null) mouseX = touchTargetX;
   touchTargetX = null;
 }, {passive:false});
 
@@ -551,11 +551,21 @@ function checkOrientation(){
   const rotateTip = document.getElementById('rotate-tip');
   if(!rotateTip) return;
   const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  const isPortrait = window.innerHeight > window.innerWidth;
-  rotateTip.style.display = (isTouchDevice && isPortrait) ? 'flex' : 'none';
+  if(!isTouchDevice){ rotateTip.style.display='none'; return; }
+  // Use screen.orientation > window.orientation > dimension fallback (WeChat compat)
+  var isPortrait;
+  if(screen.orientation && screen.orientation.type){
+    isPortrait = screen.orientation.type.indexOf('portrait') !== -1;
+  } else if(typeof window.orientation !== 'undefined'){
+    isPortrait = Math.abs(window.orientation) !== 90;
+  } else {
+    isPortrait = window.innerHeight > window.innerWidth;
+  }
+  rotateTip.style.display = isPortrait ? 'flex' : 'none';
 }
 window.addEventListener('resize', checkOrientation);
 window.addEventListener('orientationchange', checkOrientation);
+if(screen.orientation) screen.orientation.addEventListener('change', checkOrientation);
 checkOrientation();
 
 // ── EMPLOYEE ID SUBMIT ──
