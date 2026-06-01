@@ -565,7 +565,7 @@ document.getElementById('eid-submit').addEventListener('click', async function()
     fetch(WEBHOOK, {
       method: 'POST',
       mode: 'no-cors',
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'text/plain'},
       body: JSON.stringify({ employee_id: val, score: Math.max(0, score) })
     });
     // no-cors: response is opaque, treat send as success
@@ -581,17 +581,60 @@ document.getElementById('eid-submit').addEventListener('click', async function()
   }
 });
 
-// Reset employee ID form on new game
-const _origStartGame = startGame;
-startGame = function(){
-  const inp = document.getElementById('eid-input');
-  const msg = document.getElementById('eid-msg');
-  const btn = document.getElementById('eid-submit');
-  inp.value=''; inp.disabled=false; inp.classList.remove('error');
-  msg.className='eid-msg'; msg.textContent='';
-  btn.disabled=false; btn.textContent='提交';
-  _origStartGame();
-};
+
+// ── EMPLOYEE ID SUBMIT ──
+(function(){
+  var WEBHOOK = 'https://klook.sg.larksuite.com/base/workflow/webhook/event/SXBGacwlowyytxh0dZjlWbu8g6c';
+  var submitBtn = document.getElementById('eid-submit');
+  var inputEl   = document.getElementById('eid-input');
+  var msgEl     = document.getElementById('eid-msg');
+
+  submitBtn.addEventListener('click', function(){
+    var val = inputEl.value.trim().toUpperCase();
+    // Validate K + 6 digits
+    if(!/^K[0-9]{6}$/.test(val)){
+      inputEl.style.borderColor = '#e03030';
+      msgEl.style.color = '#e03030';
+      msgEl.textContent = '格式错误，请输入 K + 6位数字（如 K123456）';
+      return;
+    }
+    inputEl.style.borderColor = '';
+    msgEl.textContent = '';
+    submitBtn.disabled = true;
+    submitBtn.textContent = '提交中…';
+
+    var payload = JSON.stringify({ employee_id: val, score: Math.max(0, score) });
+    fetch(WEBHOOK, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: payload
+    }).then(function(){
+      msgEl.style.color = '#0a8040';
+      msgEl.textContent = '✅ 提交成功！';
+      submitBtn.textContent = '已提交';
+      inputEl.disabled = true;
+    }).catch(function(){
+      submitBtn.disabled = false;
+      submitBtn.textContent = '提交';
+      msgEl.style.color = '#e03030';
+      msgEl.textContent = '提交失败，请检查网络后重试';
+    });
+  });
+
+  // Reset form each time result screen shows
+  var _origShowResult = showResult;
+  showResult = function(){
+    inputEl.value = '';
+    inputEl.disabled = false;
+    inputEl.style.borderColor = '';
+    submitBtn.disabled = false;
+    submitBtn.textContent = '提交';
+    msgEl.textContent = '';
+    _origShowResult();
+  };
+})();
+
 </script>
 <div id="rotate-tip">
   <div class="rt-icon">📱</div>
